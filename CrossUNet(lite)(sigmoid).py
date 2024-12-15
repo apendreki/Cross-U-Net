@@ -123,27 +123,13 @@ class CrossUNet(nn.Module):
         self.pool3 = nn.MaxPool2d(2)
 
         # A Path (original structure)
-        self.a_bottleneck1 = EncoderBlock(256, 512)
-        self.a_decoder1 = DecoderBlock(in_channels=512, out_channels=256, skip_channels=512)  # 수정됨
-        self.a_decoder2 = DecoderBlock(in_channels=256, out_channels=128, skip_channels=512)  # 수정됨
-        self.a_bottleneck2 = EncoderBlock(128, 64)
-        self.a_encoder1 = EncoderBlock(64, 128)
-        self.pool_a1 = nn.MaxPool2d(2)
-        self.a_encoder2 = EncoderBlock(128, 256)
-        self.pool_a2 = nn.MaxPool2d(2)
-        self.a_bottleneck3 = EncoderBlock(256, 512)
+
 
         # B Path (channel reduction)
-        self.b_encoder1 = EncoderBlock(256, 512)
-        self.pool_b1 = nn.MaxPool2d(2)
-        self.b_encoder2 = EncoderBlock(512, 512)  # keep at 512
-        self.pool_b2 = nn.MaxPool2d(2)
-        self.b_bottleneck = EncoderBlock(512, 512)
-        self.b_decoder1 = DecoderBlock(in_channels=512, out_channels=256, skip_channels=128)  # 수정됨
-        self.b_decoder2 = DecoderBlock(in_channels=256, out_channels=128, skip_channels=256)  # 수정됨
+
 
         # Attention Gate
-        self.attention_gate = AttentionGate(F_g=512, F_l=128, F_int=128)  # F_l=128로 수정
+
 
         # Final Decoder
         self.final_decoder1 = DecoderBlock(in_channels=128, out_channels=128, skip_channels=256)  # 수정됨
@@ -163,28 +149,15 @@ class CrossUNet(nn.Module):
         enc3_pool = self.pool3(enc3) # [B, 256, H/8, W/8]
 
         # B Path
-        b_enc1 = self.b_encoder1(enc3_pool) # [B, 512, H/8, W/8]
-        b_enc1_pool = self.pool_b1(b_enc1)  # [B, 512, H/16, W/16]
-        b_enc2 = self.b_encoder2(b_enc1_pool) # [B, 512, H/16, W/16]
-        b_bottleneck = self.b_bottleneck(b_enc2) # [B, 512, H/16, W/16]
+
 
         # A Path
-        a_bottleneck1 = self.a_bottleneck1(enc3_pool) # [B, 512, H/8, W/8]
-        a_dec1 = self.a_decoder1(a_bottleneck1, skip=b_enc1) # [B, 256, H/4, W/4]
-        a_dec2 = self.a_decoder2(a_dec1, skip=b_enc2)# [B, 128, H/2, W/2]
-        a_bottleneck2 = self.a_bottleneck2(a_dec2) # [B, 64, H/2, W/2]
-        a_enc1 = self.a_encoder1(a_bottleneck2)# [B, 128, H/2, W/2]
-        a_enc1_pool = self.pool_a1(a_enc1)# [B, 128, H/4, W/4]
-        a_enc2 = self.a_encoder2(a_enc1_pool)# [B, 256, H/4, W/4]
-        a_enc2_pool = self.pool_a2(a_enc2)# [B, 256, H/8, W/8]
-        a_bottleneck3 = self.a_bottleneck3(a_enc2_pool)# [B, 512, H/8, W/8]
+
 
         # B Path Decoder
-        b_dec1 = self.b_decoder1(b_bottleneck, skip=a_enc1) # [B, 256, H/4, W/4]
-        b_dec2 = self.b_decoder2(b_dec1, skip=a_enc2) # [B, 128, H/2, W/2]
 
         # Attention Gate
-        merged = self.attention_gate(a_bottleneck3, b_dec2) # [B, 128, H/2, W/2]
+
  
         # Final Decoder
         final_dec1 = self.final_decoder1(merged, skip=enc3) # [B, 128, H/2, W/2]
